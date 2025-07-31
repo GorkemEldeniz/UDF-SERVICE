@@ -52,9 +52,6 @@ export class UDFService {
 					throw new Error(`Unsupported input format: ${options.inputFormat}`);
 			}
 
-			console.log("scriptName", scriptName);
-			console.log("args", args);
-
 			const result = await this.runPythonScript(scriptName, args);
 
 			if (result.success) {
@@ -62,7 +59,7 @@ export class UDFService {
 					success: true,
 					message: `File converted successfully from ${options.inputFormat} to ${outputFormat}`,
 					outputFile: outputPath,
-					downloadUrl: `/api/udf/download/${path.basename(outputPath)}`,
+					downloadUrl: `download/${path.basename(outputPath)}`,
 				};
 			} else {
 				return {
