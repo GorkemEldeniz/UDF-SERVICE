@@ -135,12 +135,29 @@ router.get("/download/:filename", async (req, res) => {
 		// Get file stats
 		const stats = await fs.stat(filePath);
 
+		// Determine correct Content-Type based on file extension
+		const ext = path.extname(filename).toLowerCase();
+		let contentType = "application/octet-stream";
+
+		switch (ext) {
+			case ".udf":
+				contentType = "application/udf";
+				break;
+			case ".docx":
+				contentType =
+					"application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+				break;
+			case ".pdf":
+				contentType = "application/pdf";
+				break;
+			default:
+				contentType = "application/octet-stream";
+		}
+
 		// Set headers
-		res.setHeader("Content-Type", "application/octet-stream");
+		res.setHeader("Content-Type", contentType);
 		res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 		res.setHeader("Content-Length", stats.size);
-
-		console.log("filePath", filePath);
 
 		// Send file with root parameter
 		res.sendFile(filename, { root: config.uploadDir });
