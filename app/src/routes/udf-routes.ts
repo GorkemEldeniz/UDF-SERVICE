@@ -47,22 +47,6 @@ async function ensureUploadDir() {
 // Initialize upload directory
 ensureUploadDir();
 
-// GET /api/udf/formats - Get supported formats
-router.get("/formats", async (req, res) => {
-	try {
-		const formats = await udfService.getSupportedFormats();
-		res.json({
-			success: true,
-			data: formats,
-		});
-	} catch (error) {
-		res.status(500).json({
-			success: false,
-			error: error instanceof Error ? error.message : "Failed to get formats",
-		});
-	}
-});
-
 // POST /api/udf/convert - Convert file
 router.post("/convert", upload.single("file"), async (req, res) => {
 	try {
@@ -159,8 +143,16 @@ router.get("/download/:filename", async (req, res) => {
 		res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 		res.setHeader("Content-Length", stats.size);
 
-		// Send file with root parameter
-		res.sendFile(filename, { root: config.uploadDir });
+		// Send file and delete after successful download
+		res.sendFile(filename, { root: config.uploadDir }, async (err) => {
+			if (!err) {
+				// Delete file after successful download
+				await udfService.deleteFile(filePath);
+				console.log(`File ${filename} downloaded and deleted successfully`);
+			} else {
+				console.error(`Error sending file ${filename}:`, err);
+			}
+		});
 	} catch (error) {
 		res.status(500).json({
 			success: false,

@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import { promises as fs } from "fs";
 import path from "path";
 import { config } from "../config";
 import { ConversionOptions, ConversionResponse } from "../types";
@@ -55,6 +56,9 @@ export class UDFService {
 			const result = await this.runPythonScript(scriptName, args);
 
 			if (result.success) {
+				// Delete input file after successful conversion using absolute path
+				await this.deleteFile(inputFilePath);
+
 				return {
 					success: true,
 					message: `File converted successfully from ${options.inputFormat} to ${outputFormat}`,
@@ -99,7 +103,7 @@ export class UDFService {
 				stderr += data.toString();
 			});
 
-			pythonProcess.on("close", (code) => {
+			pythonProcess.on("close", async (code) => {
 				if (code === 0) {
 					resolve({ success: true });
 				} else {
@@ -125,10 +129,11 @@ export class UDFService {
 		return path.join(dir, `${baseName}.${outputFormat}`);
 	}
 
-	async getSupportedFormats(): Promise<{ input: string[]; output: string[] }> {
-		return {
-			input: ["docx", "pdf", "udf"],
-			output: ["udf", "docx", "pdf"],
-		};
+	async deleteFile(path: string) {
+		try {
+			await fs.unlink(path);
+		} catch (error) {
+			console.error("Error deleting files:", error);
+		}
 	}
 }
